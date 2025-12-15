@@ -9,3 +9,12 @@
   - `hooks/useLiveCall.ts`: Changed `ringingTimeoutRef` type from `NodeJS.Timeout | null` to `number | null`.
   - `hooks/useLiveCall.ts`: Explicitly used `window.setTimeout` to ensure `number` return type inference.
 - **Results**: TypeScript error "Cannot find namespace 'NodeJS'" should be resolved.
+
+## 20240523-121500
+- **Objective**: Enhance agent realism to mimic a specific "Call Center Agent" persona.
+- **Files Inspected**: `constants.ts`
+- **Changes**: Updated `SYSTEM_INSTRUCTION` in `constants.ts` to V2.
+    - Added "Two Voices" protocol (Greeting vs. Working).
+    - Added "Typing Echo" instructions for data entry.
+    - Added "Floor Holding" intonation rules (stretched vowels).
+- **Results**: Agent behavior should now reflect the prosody and pacing of a multitasking professional.
