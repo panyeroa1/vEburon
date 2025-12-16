@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, PhoneOff, Mic, User, Signal } from 'lucide-react';
+import { Phone, PhoneOff, Mic, User, Signal, Battery, Wifi } from 'lucide-react';
 
 interface DialerProps {
   onCall: () => void;
@@ -20,118 +20,106 @@ const Dialer: React.FC<DialerProps> = ({ onCall, onHangup, state, volume, error 
   const pulseOpacity = 0.3 + Math.min(volume, 0.7);
 
   return (
-    <div className="flex flex-col h-full w-full max-w-md mx-auto bg-white sm:rounded-3xl sm:shadow-2xl sm:h-[800px] sm:max-h-[90vh] overflow-hidden relative">
-      {/* Top Status Bar (Fake) */}
-      <div className="flex justify-between items-center px-6 py-4 text-gray-400 text-xs font-medium">
-        <span>Beatrice Mobile</span>
-        <div className="flex items-center gap-1">
-          <Signal size={12} />
-          <span>5G</span>
-          <span>100%</span>
+    <div className="flex flex-col h-full w-full max-w-md mx-auto bg-gray-900 sm:rounded-3xl sm:shadow-2xl sm:h-[800px] sm:max-h-[90vh] overflow-hidden relative font-sans text-white">
+      
+      {/* Background with Blur */}
+      <div className="absolute inset-0 bg-gray-800 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-gray-900/40 to-black/80"></div>
+        {/* Abstract Background shapes */}
+        <div className="absolute top-[-20%] left-[-20%] w-[140%] h-[140%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-700/30 to-transparent blur-3xl"></div>
+      </div>
+
+      {/* Status Bar (Fake) */}
+      <div className="flex justify-between items-center px-8 py-5 text-gray-200 text-xs font-medium z-10 opacity-80">
+        <span className="font-semibold">9:41</span>
+        <div className="flex items-center gap-2">
+          <Signal size={14} className="fill-current" />
+          <Wifi size={14} />
+          <Battery size={16} className="fill-current" />
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col items-center pt-12 pb-8 px-6 relative z-10 transition-all duration-500">
+      <div className="flex-1 flex flex-col items-center pt-16 pb-10 px-6 relative z-10 transition-all duration-500">
         
-        {/* Contact Avatar / Visualizer */}
-        <div className="relative mb-8">
-          {isConnected && (
-            <div 
-              className="absolute inset-0 bg-rose-400 rounded-full blur-2xl transition-all duration-100 ease-out"
-              style={{ 
-                transform: `scale(${pulseScale * 1.5})`,
-                opacity: pulseOpacity * 0.6
-              }}
-            />
-          )}
-          {isRinging && (
-             <div 
-              className="absolute inset-0 bg-rose-400 rounded-full animate-ping opacity-20"
-            />
-          )}
-          
-          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 shadow-xl flex items-center justify-center relative z-10 border-4 border-white">
-            {/* Using a placeholder image for Beatrice */}
-            <img 
-               src="https://picsum.photos/200/200" 
-               alt="Beatrice" 
-               className="w-full h-full object-cover rounded-full opacity-90"
-            />
-          </div>
-        </div>
-
         {/* Contact Info */}
-        <div className="text-center space-y-2 mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Beatrice De Wilde</h1>
-          <p className="text-sm font-medium text-rose-500 uppercase tracking-wider">
-            {isConnected ? 'On Call' : isRinging ? 'Calling...' : isConnecting ? 'Connecting...' : 'Property Manager'}
-          </p>
-          {isConnected && (
-            <div className="flex items-center justify-center gap-2 text-gray-400 text-sm mt-2 animate-pulse">
-               <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
-               <span>00:14</span>
+        <div className="text-center space-y-4 mb-auto">
+          <div className="relative mx-auto mb-6 w-32 h-32">
+             {/* Avatar / Visualizer */}
+             {isConnected && (
+                <div 
+                  className="absolute inset-0 bg-white/20 rounded-full blur-xl transition-all duration-75 ease-out"
+                  style={{ 
+                    transform: `scale(${pulseScale * 1.2})`,
+                    opacity: pulseOpacity
+                  }}
+                />
+              )}
+            <div className="w-32 h-32 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl relative z-10">
+              <User size={48} className="text-gray-400" />
             </div>
-          )}
+          </div>
+
+          <div className="space-y-1">
+            <h1 className="text-3xl font-medium tracking-tight text-white">Beatrice De Wilde</h1>
+            <p className="text-lg text-gray-300 font-light tracking-wide">+1 (844) 484 9501</p>
+          </div>
+          
+          <div className="h-6">
+            <p className="text-sm font-medium text-white/60 tracking-wider uppercase animate-pulse">
+              {isConnected ? '00:14' : isRinging ? 'Calling...' : isConnecting ? 'Connecting...' : 'Property Manager'}
+            </p>
+          </div>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 px-4 py-3 bg-red-50 text-red-600 text-xs rounded-lg text-center max-w-xs mx-auto border border-red-100">
-            {error}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full px-8">
+            <div className="px-4 py-3 bg-red-500/90 backdrop-blur-sm text-white text-xs rounded-xl text-center border border-red-400/50 shadow-lg">
+              {error}
+            </div>
           </div>
         )}
 
         {/* Action Area */}
-        <div className="mt-auto w-full flex flex-col items-center gap-8">
+        <div className="w-full flex flex-col items-center gap-12 mb-10">
           
-          {/* Controls (Mute/Speaker) - Visual only for this demo */}
-          {isConnected && (
-            <div className="flex justify-center w-full gap-8 px-8">
-              <button className="flex flex-col items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
-                  <Mic size={20} />
-                </div>
-                <span className="text-xs">Mute</span>
-              </button>
-              <button className="flex flex-col items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                 <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
-                  <User size={20} />
-                </div>
-                <span className="text-xs">Contacts</span>
-              </button>
-            </div>
-          )}
+          {/* Controls Grid */}
+          <div className={`grid grid-cols-3 gap-x-8 gap-y-8 w-full max-w-[300px] transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+             {['Mute', 'Keypad', 'Speaker', 'Add Call', 'FaceTime', 'Contacts'].map((label, i) => (
+               <div key={label} className="flex flex-col items-center gap-2 group cursor-pointer">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${label === 'Speaker' && isConnected ? 'bg-white text-gray-900' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                    {i === 0 && <Mic size={24} />}
+                    {i === 1 && <div className="grid grid-cols-3 gap-1"><div className="w-1 h-1 bg-current rounded-full"/><div className="w-1 h-1 bg-current rounded-full"/><div className="w-1 h-1 bg-current rounded-full"/><div className="w-1 h-1 bg-current rounded-full"/><div className="w-1 h-1 bg-current rounded-full"/><div className="w-1 h-1 bg-current rounded-full"/><div className="w-1 h-1 bg-current rounded-full"/><div className="w-1 h-1 bg-current rounded-full"/><div className="w-1 h-1 bg-current rounded-full"/></div>}
+                    {i === 2 && <Signal size={24} />} 
+                    {i > 2 && <User size={24} />} 
+                  </div>
+                  <span className="text-[10px] font-medium text-white/80">{label}</span>
+               </div>
+             ))}
+          </div>
 
           {/* Call Action Button */}
-          <div className="relative group">
+          <div className="relative">
             {isActive ? (
               <button
                 onClick={onHangup}
-                className="w-20 h-20 bg-red-500 text-white rounded-full shadow-red-200 shadow-xl flex items-center justify-center transform transition-all hover:scale-105 active:scale-95 hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-100"
+                className="w-20 h-20 bg-red-500 text-white rounded-full shadow-lg shadow-red-500/30 flex items-center justify-center transform transition-all hover:scale-105 active:scale-95 hover:bg-red-600"
               >
                 <PhoneOff size={32} fill="currentColor" />
               </button>
             ) : (
-              <React.Fragment>
-                {/* Ping animation for call button */}
-                <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-20 duration-1000"></div>
-                <button
-                  onClick={onCall}
-                  className="w-20 h-20 bg-green-500 text-white rounded-full shadow-green-200 shadow-xl flex items-center justify-center transform transition-all hover:scale-105 active:scale-95 hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-100 relative z-10"
-                >
-                  <Phone size={32} fill="currentColor" className="ml-1" />
-                </button>
-              </React.Fragment>
+              <button
+                onClick={onCall}
+                className="w-20 h-20 bg-green-500 text-white rounded-full shadow-lg shadow-green-500/30 flex items-center justify-center transform transition-all hover:scale-105 active:scale-95 hover:bg-green-600"
+              >
+                <Phone size={32} fill="currentColor" className="ml-1" />
+              </button>
             )}
           </div>
           
-          <div className="h-8"></div> {/* Spacer */}
         </div>
       </div>
-
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-rose-50/50 to-transparent -z-0 pointer-events-none"></div>
     </div>
   );
 };

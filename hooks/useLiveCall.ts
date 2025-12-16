@@ -32,6 +32,10 @@ export const useLiveCall = (): UseLiveCallReturn => {
   const ringtoneRef = useRef<HTMLAudioElement | null>(null);
   const ringingTimeoutRef = useRef<number | null>(null);
   
+  // Refs for silence detection
+  const lastUserInteractionRef = useRef<number>(0);
+  const silenceIntervalRef = useRef<number | null>(null);
+  
   // API Session
   const sessionRef = useRef<any>(null); // Type is loosely defined as the SDK types are internal/complex
   const clientRef = useRef<GoogleGenAI | null>(null);
@@ -91,6 +95,12 @@ export const useLiveCall = (): UseLiveCallReturn => {
         ringtoneRef.current.pause();
         ringtoneRef.current.currentTime = 0;
         ringtoneRef.current = null;
+    }
+
+    // Stop Silence Detection
+    if (silenceIntervalRef.current) {
+      clearInterval(silenceIntervalRef.current);
+      silenceIntervalRef.current = null;
     }
 
     // 1. Close Session
@@ -191,6 +201,27 @@ export const useLiveCall = (): UseLiveCallReturn => {
           onopen: () => {
             console.log("Gemini Live Session Opened");
             setConnectionState('connected');
+            lastUserInteractionRef.current = Date.now();
+            
+            // Start Silence Detection Interval
+            silenceIntervalRef.current = window.setInterval(() => {
+              const now = Date.now();
+              const timeSinceLastInput = now - lastUserInteractionRef.current;
+              
+              // If user silent for > 6s AND agent is NOT speaking
+              if (timeSinceLastInput > 6000 && !isPlayingRef.current) {
+                console.log("Silence detected, sending nudge.");
+                sessionRef.current.then((session: any) => {
+                  // Send a text nudge to the model to check in
+                  session.sendRealtimeInput([{
+                    mimeType: "text/plain", 
+                    data: "System: The user has been silent for 6 seconds. If appropriate, casually check if they are still there or suggest a relevant topic. Do not repeat yourself." 
+                  }]);
+                });
+                // Reset timer to avoid spamming the nudge
+                lastUserInteractionRef.current = Date.now(); 
+              }
+            }, 1000);
             
             // Start streaming audio
             if (!inputAudioContextRef.current || !mediaStreamRef.current) return;
@@ -208,7 +239,13 @@ export const useLiveCall = (): UseLiveCallReturn => {
               }
               const rms = Math.sqrt(sum / inputData.length);
               // Simple smoothing
-              setVolumeLevel(prev => prev * 0.8 + rms * 2.0); // Boosted slightly for visibility
+              setVolumeLevel(prev => prev * 0.8 + rms * 2.0); 
+
+              // Silence Detection Logic
+              // If volume is significant, user is speaking
+              if (rms > 0.02) {
+                lastUserInteractionRef.current = Date.now();
+              }
 
               const pcmBlob = createPcmBlob(inputData);
               sessionRef.current.then((session: any) => {
@@ -228,26 +265,27 @@ export const useLiveCall = (): UseLiveCallReturn => {
                 const audioData = base64ToUint8Array(base64Audio);
                 const audioBuffer = await decodeAudioData(audioData, outputAudioContextRef.current);
                 queueAudio(audioBuffer);
+                // If model is speaking, reset silence timer so we don't interrupt it with a nudge
+                lastUserInteractionRef.current = Date.now();
               }
             }
             
             if (serverContent?.interrupted) {
-              // Clear queue if interrupted
               audioQueueRef.current = [];
               isPlayingRef.current = false;
-              // We might need to stop currently playing nodes, but keeping it simple for now
-              // In a full implementation, track sources in a Set and stop them here.
               nextStartTimeRef.current = outputAudioContextRef.current?.currentTime || 0;
             }
           },
           onclose: () => {
             console.log("Session Closed");
             setConnectionState('disconnected');
+            if (silenceIntervalRef.current) clearInterval(silenceIntervalRef.current);
           },
           onerror: (err: any) => {
             console.error("Session Error", err);
             setError(err.message || "An error occurred during the call.");
             setConnectionState('disconnected');
+            if (silenceIntervalRef.current) clearInterval(silenceIntervalRef.current);
           }
         },
         config: {
@@ -264,14 +302,13 @@ export const useLiveCall = (): UseLiveCallReturn => {
 
     } catch (err: any) {
       console.error("Connection failed", err);
-      // Clean up if we fail during the ringing phase or connection phase
       if (ringtoneRef.current) {
           ringtoneRef.current.pause();
           ringtoneRef.current = null;
       }
       setError("Failed to connect to the call service. Please check your network or API limits.");
       setConnectionState('disconnected');
-      disconnect(); // Cleanup
+      disconnect(); 
     }
   }, [queueAudio, disconnect]);
 
